@@ -5,7 +5,7 @@ import Orrery from '../components/orrery';
 function Page() {
   const [NEOData, setNEOData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=spkid,full_name,kind,epoch,e,a,i,om,w,ma,n&limit=100';
+  const API_URL = '/data.json';
 
   // Fetch the NEO data
   useEffect(() => {
