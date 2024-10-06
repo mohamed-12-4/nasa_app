@@ -13,7 +13,7 @@ const sunRadius = 0.1; // Scaled Sun radius in comparison to Earth
 
 const orbitScale = 1.5; // Scale to spread out the planets.
 const innerPlanetSizeScale = 0.005; // Very small size for inner planets
-const outerPlanetSizeScale = 0.01; // Slightly larger for outer planets
+const outerPlanetSizeScale = 1.25; // Slightly larger for outer planets
 const outerOrbitScale = 0.2
 const planets = [
   {
@@ -80,7 +80,7 @@ const planets = [
     peri: 92.4,
     M: 50.1,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07 * outerPlanetSizeScale
   },
   {
     name: 'Uranus',
@@ -91,7 +91,7 @@ const planets = [
     peri: 170.9,
     M: 142.2,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07 * outerPlanetSizeScale
   },
   {
     name: 'Neptune',
@@ -102,7 +102,7 @@ const planets = [
     peri: 44.97,
     M: 256.2,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07 * outerPlanetSizeScale
   }
 ];
 
@@ -157,30 +157,32 @@ function keplerianToCartesian(keplerParams, currentEpoch, scale) {
 
 
 // Orbital Object Component
-const OrbitalObject = ({ keplerParams, scale, radius, textureUrl, name, info }) => {
+const OrbitalObject = ({ isNeo, keplerParams, scale, radius, textureUrl, name, info, setSimulationTime, speedMultiplier }) => {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
   const texture = useLoader(THREE.TextureLoader, textureUrl);
-  const speedMultiplier = 1; // Speed up the orbit
-  const startTime = useRef(Date.now()); // Save the simulation start time
-  const elapsedSimTime = useRef(0); // To track the elapsed simulated time
+  const startTime = useRef(Date.now()); // Save the real-world start time
+  const simStartEpoch = useRef(Date.now()); // Reference point for simulation start (initial epoch)
 
   // Frame-by-frame update for the object's position
   useFrame(() => {
-    // Real elapsed time in milliseconds
+    // Real elapsed time in milliseconds since the simulation started
     const realElapsedTime = Date.now() - startTime.current;
 
     // Elapsed simulation time scaled by speedMultiplier (in milliseconds)
     const simulationElapsedTime = realElapsedTime * speedMultiplier;
 
-    // Convert elapsed simulation time to epoch time (days)
-    const currentEpoch = (simulationElapsedTime / 86400000); // Epoch in days
+    // Convert the elapsed simulation time to epoch time (in days)
+    const currentEpoch = simulationElapsedTime / 86400000; // Epoch in days
 
-    // Convert currentEpoch to simulated date
-    const simulatedTime = new Date(Date.now() + currentEpoch * 86400000);
+    // Compute the simulated time by adding the scaled elapsed time to the initial simulation start time
+    const simulatedTime = new Date(simStartEpoch.current + simulationElapsedTime);
 
-    // Convert the simulated time to a readable date
+    // Convert the simulated time to a readable date format
     const simulationDate = simulatedTime.toUTCString();
+
+    // Call the setSimulationDate function to update the date in the parent component
+    setSimulationTime(simulationDate);
 
     // Update the orbital position based on the current epoch
     const updatedPosition = keplerianToCartesian(keplerParams, currentEpoch, scale);
@@ -188,9 +190,9 @@ const OrbitalObject = ({ keplerParams, scale, radius, textureUrl, name, info }) 
     if (meshRef.current) {
       meshRef.current.position.set(updatedPosition.x, updatedPosition.y, updatedPosition.z);
     }
+    console.log(name);
 
-    // Log the simulation date and current position
-    console.log(`Simulation Date: ${simulationDate}, Position: `, updatedPosition);
+    // Debugging log: Display the simulation date and current position
   });
 
   return (
@@ -201,7 +203,11 @@ const OrbitalObject = ({ keplerParams, scale, radius, textureUrl, name, info }) 
         onPointerOut={() => setHovered(false)}
       >
         <sphereGeometry args={[radius, 32, 32]} />
-        <meshStandardMaterial map={texture} />
+        {isNeo ? (
+          <meshBasicMaterial color="blue" />
+        ) : (
+          <meshStandardMaterial map={texture} />
+        )}
       </mesh>
 
       {hovered && meshRef.current && (
@@ -219,8 +225,19 @@ const OrbitalObject = ({ keplerParams, scale, radius, textureUrl, name, info }) 
 // Orrery Simulation Component
 const Orrery = ({ NEOData }) => {
   const scale = 100; // Scale for the orbits
+  const [simulationTime, setSimulationTime] = useState(0);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
 
   return (
+    <>
+    <h1>
+      {`Simulation Time: ${simulationTime}`}
+      
+    </h1>
+    <button onClick={() => setSpeedMultiplier(1)}>Normal Speed</button>
+    <button onClick={() => setSpeedMultiplier(speedMultiplier * 0.75)}>Lower Speed</button>
+    <button onClick={() => setSpeedMultiplier(speedMultiplier * 1.25)}>Higher Speed</button>
+
     <Canvas camera={{ position: [0, 0, 10], fov: 75 }} style={{ width: '100vw', height: '100vh' }}>
       <Stars />
       <OrbitControls />
@@ -236,6 +253,7 @@ const Orrery = ({ NEOData }) => {
       {/* Planets and their orbits */}
       {planets.map((planet, index) => (
         <OrbitalObject
+        isNeo={false}
           key={index}
           keplerParams={planet}
           scale={1}
@@ -243,21 +261,27 @@ const Orrery = ({ NEOData }) => {
           textureUrl={`/${planet.name.toLowerCase()}.png`} // Use small dots as textures if needed
           name={planet.name}
           info={`Radius: ${planet.radius} km`}
+          setSimulationTime={setSimulationTime}
+          speedMultiplier={speedMultiplier}
         />
       ))}
 
       {NEOData.map((neo, index) => (
         <OrbitalObject
+        isNeo={true}
         key={index}
         keplerParams={neo}
         scale={1}
         radius={0.04}
         textureUrl={'/sun.png'}
-        name={`NEO ${neo.index + 1}`}
+        name={`${neo.name}`}
         info={'NEO'}
+        setSimulationTime={setSimulationTime}
+        speedMultiplier={speedMultiplier}
         />
       ))}
     </Canvas>
+    </>
   );
 };
 
