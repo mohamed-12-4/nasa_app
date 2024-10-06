@@ -23,7 +23,7 @@ export default function CreateArticle() {
 
       // Add article to the server
       setLoading(true);
-      await axios.post('http://127.0.0.1:8000/api/articles/', {
+      await axios.post('https://nasa-app-hltg.onrender.com/api/articles/', {
         title: title,
         content: content,
       });

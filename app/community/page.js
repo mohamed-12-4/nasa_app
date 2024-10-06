@@ -13,7 +13,7 @@ export default function Page() {
       try {
         console.log("Fetching articles...");  // Log before request
 
-        const response = await axios.get('http://127.0.0.1:8000/api/articles/');
+        const response = await axios.get('https://nasa-app-hltg.onrender.com/api/articles/');
         console.log(response.data);
         setArticles(response.data);
         setLoading(false);
