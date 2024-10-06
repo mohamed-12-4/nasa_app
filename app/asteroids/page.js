@@ -3,7 +3,7 @@ import React from 'react';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { StarsCanvas } from '../components/StarBackground';
+
 
 function Page() {
     const [asteroids, setAsteroids] = useState([]);
@@ -62,7 +62,6 @@ function Page() {
 
     return (
         <>
-        <StarsCanvas />
         <div className="min-h-screen bg-black text-white p-10">
             <h1 className="text-4xl mb-8 text-center">Asteroids Close to Earth</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

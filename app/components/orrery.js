@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Html, Line } from '@react-three/drei';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useLoader } from '@react-three/fiber';
 
 // Increase the scale for distances to make orbits larger (in AU).
- // 1 AU = 100 units in the 3D scene
+// 1 AU = 100 units in the 3D scene
 
 // Define the radius of the Sun (in scaled units, e.g., Sun radius is ~109 times Earth's radius)
 const sunRadius = 0.1; // Scaled Sun radius in comparison to Earth
@@ -14,29 +14,29 @@ const sunRadius = 0.1; // Scaled Sun radius in comparison to Earth
 const orbitScale = 1.5; // Scale to spread out the planets.
 const innerPlanetSizeScale = 0.005; // Very small size for inner planets
 const outerPlanetSizeScale = 1.25; // Slightly larger for outer planets
-const outerOrbitScale = 0.2
+const outerOrbitScale = 0.2;
 const planets = [
   {
     name: 'Mercury',
     e: 0.2056,
-    a: 0.387 * orbitScale,  // Orbital distance scaling
+    a: 0.387 * orbitScale, // Orbital distance scaling
     i: 7.0,
     node: 48.3,
     peri: 77.5,
     M: 174.8,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07,
   },
   {
     name: 'Venus',
     e: 0.0067,
-    a: 0.723 * orbitScale, 
+    a: 0.723 * orbitScale,
     i: 3.4,
     node: 76.7,
     peri: 131.5,
     M: 50.1,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07,
   },
   {
     name: 'Earth',
@@ -47,7 +47,7 @@ const planets = [
     peri: 102.9,
     M: 100.0,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07,
   },
   {
     name: 'Mars',
@@ -58,7 +58,7 @@ const planets = [
     peri: 336.0,
     M: 355.5,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07,
   },
   {
     name: 'Jupiter',
@@ -69,7 +69,7 @@ const planets = [
     peri: 14.3,
     M: 34.3,
     epoch: 2451545.0,
-    radius: 0.07
+    radius: 0.07,
   },
   {
     name: 'Saturn',
@@ -80,7 +80,7 @@ const planets = [
     peri: 92.4,
     M: 50.1,
     epoch: 2451545.0,
-    radius: 0.07 * outerPlanetSizeScale
+    radius: 0.07 * outerPlanetSizeScale,
   },
   {
     name: 'Uranus',
@@ -91,7 +91,7 @@ const planets = [
     peri: 170.9,
     M: 142.2,
     epoch: 2451545.0,
-    radius: 0.07 * outerPlanetSizeScale
+    radius: 0.07 * outerPlanetSizeScale,
   },
   {
     name: 'Neptune',
@@ -102,8 +102,8 @@ const planets = [
     peri: 44.97,
     M: 256.2,
     epoch: 2451545.0,
-    radius: 0.07 * outerPlanetSizeScale
-  }
+    radius: 0.07 * outerPlanetSizeScale,
+  },
 ];
 
 // Kepler's Equation Solver
@@ -154,7 +154,6 @@ function keplerianToCartesian(keplerParams, currentEpoch, scale) {
 
   return position;
 }
-
 
 // Orbital Object Component
 const OrbitalObject = ({ isNeo, keplerParams, scale, radius, textureUrl, name, info, setSimulationTime, speedMultiplier }) => {
@@ -229,60 +228,98 @@ const Orrery = ({ NEOData }) => {
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
 
   return (
-    <>
-    <h1>
-      {`Simulation Time: ${simulationTime}`}
-      
-    </h1>
-    <button onClick={() => setSpeedMultiplier(1)}>Normal Speed</button>
-    <button onClick={() => setSpeedMultiplier(speedMultiplier * 0.75)}>Lower Speed</button>
-    <button onClick={() => setSpeedMultiplier(speedMultiplier * 1.25)}>Higher Speed</button>
+    <div style={styles.container}>
+      <Canvas camera={{ position: [0, 0, 10], fov: 75 }} style={{ width: '100vw', height: '100vh' }}>
+        <Stars />
+        <OrbitControls />
+        <ambientLight intensity={1.0} />
+        <pointLight position={[0, 0, 0]} intensity={10} distance={5000} />
+        
+        {/* Sun as a small point */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[sunRadius, 32, 32]} />
+          <meshBasicMaterial color="yellow" />
+        </mesh>
 
-    <Canvas camera={{ position: [0, 0, 10], fov: 75 }} style={{ width: '100vw', height: '100vh' }}>
-      <Stars />
-      <OrbitControls />
-      <ambientLight intensity={1.0} />
-      <pointLight position={[0, 0, 0]} intensity={10} distance={5000} />
-      
-      {/* Sun as a small point */}
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[sunRadius, 32, 32]} />
-        <meshBasicMaterial color="yellow" />
-      </mesh>
+        {/* Planets and their orbits */}
+        {planets.map((planet, index) => (
+          <OrbitalObject
+            isNeo={false}
+            key={index}
+            keplerParams={planet}
+            scale={1}
+            radius={planet.radius} // Very small size
+            textureUrl={`/${planet.name.toLowerCase()}.png`} // Use small dots as textures if needed
+            name={planet.name}
+            info={`Radius: ${planet.radius} km`}
+            setSimulationTime={setSimulationTime}
+            speedMultiplier={speedMultiplier}
+          />
+        ))}
 
-      {/* Planets and their orbits */}
-      {planets.map((planet, index) => (
-        <OrbitalObject
-        isNeo={false}
-          key={index}
-          keplerParams={planet}
-          scale={1}
-          radius={planet.radius} // Very small size
-          textureUrl={`/${planet.name.toLowerCase()}.png`} // Use small dots as textures if needed
-          name={planet.name}
-          info={`Radius: ${planet.radius} km`}
-          setSimulationTime={setSimulationTime}
-          speedMultiplier={speedMultiplier}
-        />
-      ))}
+        {NEOData.map((neo, index) => (
+          <OrbitalObject
+            isNeo={true}
+            key={index}
+            keplerParams={neo}
+            scale={1}
+            radius={0.04}
+            textureUrl={'/sun.png'}
+            name={`${neo.name}`}
+            info={'NEO'}
+            setSimulationTime={setSimulationTime}
+            speedMultiplier={speedMultiplier}
+          />
+        ))}
 
-      {NEOData.map((neo, index) => (
-        <OrbitalObject
-        isNeo={true}
-        key={index}
-        keplerParams={neo}
-        scale={1}
-        radius={0.04}
-        textureUrl={'/sun.png'}
-        name={`${neo.name}`}
-        info={'NEO'}
-        setSimulationTime={setSimulationTime}
-        speedMultiplier={speedMultiplier}
-        />
-      ))}
-    </Canvas>
-    </>
+        {/* Overlay controls and title */}
+        <Html fullscreen>
+          <div style={styles.overlay}>
+            <h1 style={styles.title}>{`Simulation Time: ${simulationTime}`}</h1>
+            <div style={styles.buttonContainer}>
+              <button style={styles.button} onClick={() => setSpeedMultiplier(1)}>Normal Speed</button>
+              <button style={styles.button} onClick={() => setSpeedMultiplier(speedMultiplier * 0.75)}>Lower Speed</button>
+              <button style={styles.button} onClick={() => setSpeedMultiplier(speedMultiplier * 1.25)}>Higher Speed</button>
+            </div>
+          </div>
+        </Html>
+      </Canvas>
+    </div>
   );
+};
+
+const styles = {
+  container: {
+    textAlign: 'center',
+    fontFamily: 'Arial, sans-serif',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    padding: '20px',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)', // More transparent background
+    zIndex: 10,
+  },
+  title: {
+    fontSize: '2em',
+    color: '#333',
+    marginBottom: '20px',
+  },
+  buttonContainer: {
+    marginBottom: '20px',
+  },
+  button: {
+    padding: '10px 20px',
+    margin: '0 10px',
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    borderRadius: '5px',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+  },
 };
 
 export default Orrery;
